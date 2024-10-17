@@ -3,26 +3,75 @@ import pandas as pd
 import streamlit as st
 import numpy as np
 from tensorflow.keras.models import load_model
+# import os
+# st.write(os.listdir('.'))
+
+# Inject custom CSS to add a background image
+st.markdown(
+    """
+    <style>
+    .stApp {
+        background-color: white;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 model = load_model('nba.keras')
 # st.write(model.summary())
 st.title('NBA Moneyline Model')
-
+st.video('https://www.youtube.com/watch?v=21y14JbQo8A')
 st.sidebar.write('**Please fill out the criteria to get a result**')
 st.info('**Machine learning models must use numbers to make predictions. So we must convert teams into numbers and keep them  consistant.**')
 
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
+#decimal odds deltas
 team1_decimal_odds = st.sidebar.slider('team 1 decimal odds', .1, 12.1, 6.2)
 team2_decimal_odds = st.sidebar.slider('team 2 decimal odds', .1, 12.1, 6.2)
-decimal_delta = st.sidebar.slider('odds delta (absolute value of the difference between the odds)', .1, 12.1, 6.2)
-delta_points_per_game = st.sidebar.slider('points delta (favorite-underdog)', -4.0, 4.0, 0.0, step=0.1)
-delta_assists_per_game = st.sidebar.slider('assists delta (favorite-underdog)', -4.0, 4.0, 0.0, step=0.1)
-delta_free_throw_percentage = st.sidebar.slider('free throw percentage delta (favorite-underdog)', -4.0, 4.0, 0.0, step=0.1)
+# Dynamically calculate decimal_delta as the absolute difference
+decimal_delta = abs(team1_decimal_odds - team2_decimal_odds)
+st.sidebar.write(f'**Odds Delta** (Absolute Difference)**:** **{decimal_delta:.2f}**')
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
+
+
+#points deltas
+favorite_team_points = st.sidebar.slider('Favorite Team avg pts scored per game', 95, 130, 100)
+underdog_team_points = st.sidebar.slider('Underdog Team avg pts scored per game', 95, 130, 100)
+points_delta = (favorite_team_points-underdog_team_points)
+st.sidebar.write(f'**Points Delta:** **{points_delta:.2f}**')
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
+
+#Assist Deltas
+favorite_team_assists = st.sidebar.slider('Favorite Team Assists per game', 15.0, 35.0, step=0.1)
+underdog_team_assists = st.sidebar.slider('Underdog Team Assists per game',  15.0, 35.0, step=0.1)
+delta_assists_per_game = (favorite_team_assists-underdog_team_assists)
+st.sidebar.write(f'**Assists Delta:** **{delta_assists_per_game:.2f}**')
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
+
+#free throw percentage delta
+favorite_team_ft=st.sidebar.slider('Favorite team Free Throw Percentage', 60, 100, 1)
+underdog_team_ft=st.sidebar.slider('Underdog team Free Throw Percentage', 60, 100, 1)
+delta_free_throw_percentage = (favorite_team_ft-underdog_team_ft)
+st.sidebar.write(f'**Free Throw% Delta: {delta_free_throw_percentage:.2f}**')
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
+
 team1_encoded = st.sidebar.slider('team 1 encoded', 0, 30, 1)
+
 favorite_encoded = st.sidebar.slider('favorite encoded', 0, 30, 1)
+
 visitor_encoded = st.sidebar.slider('visitor team encoded', 0, 30, 1)
+# Add a thicker divider using HTML
+st.sidebar.markdown('<hr style="border:2px solid black">', unsafe_allow_html=True)
 
 with st.expander('**Why am I entering these random numbers?**'):
-    st.write('We found that these exact parameters yeilded the highest accuracy on unseen data AKA: val_accuracy. It may seem odd and counterproductive to enter some of these values, but all of these columns have positive coeffiences for correlation.')
+    st.write('We found that these exact parameters yeilded the highest accuracy on unseen data AKA: val_accuracy. It may seem odd and counterproductive to enter some of these values, but all of these columns have significant coeffiences for correlation.')
     st.write('Taking the difference between two teams, rather than using each teams general statistic yeilded 5 percent higher val_accuracy and the log_loss dropped around .3')
     st.write('Achieving ~70 percent accuracy is remarkably difficult when trying to predict something with extremely high randomness, we apologize for the inconvience. Some things we just cannot get around :(')
 
@@ -41,36 +90,36 @@ with st.expander('**Data for Deltas**'):
     
     # Dictionary mapping team names to URLs (you'll need to replace the URLs with the actual ones)
     teams_urls = {
-        'Atlanta Hawks': 'https://www.basketball-reference.com/teams/ATL/2024.html',
-        "Boston Celtics": 'https://www.basketball-reference.com/teams/BOS/2024.html', 
-        "Brooklyn Nets": 'https://www.basketball-reference.com/teams/BRK/2024.html', 
-        "Charlotte Hornets": 'https://www.basketball-reference.com/teams/CHA/2024.html', 
-        "Chicago Bulls": 'https://www.basketball-reference.com/teams/CHI/2024.html',
-        'Cleveland Cavaliers': 'https://www.basketball-reference.com/teams/CLE/2024.html',
-        'Dallas Mavericks': 'https://www.basketball-reference.com/teams/DAL/2024.html',
-        'Denver Nuggets': 'https://www.basketball-reference.com/teams/DEN/2024.html',
-        'Detroit Pistons': 'https://www.basketball-reference.com/teams/DET/2024.html',
-        'Golden State Warriors': 'https://www.basketball-reference.com/teams/GSW/2024.html',
-        'Houston Rockets': 'https://www.basketball-reference.com/teams/HOU/2024.html',
-        'Indiana Pacers': 'https://www.basketball-reference.com/teams/IND/2024.html',
-        'Los Angeles Clippers': 'https://www.basketball-reference.com/teams/LAC/2024.html',
-        'Los Angeles Lakers': 'https://www.basketball-reference.com/teams/LAL/2024.html',
-        'Memphis Grizzlies': 'https://www.basketball-reference.com/teams/MEM/2024.html',
-        'Miami Heat': 'https://www.basketball-reference.com/teams/MIA/2024.html',
-        'Milwaukee Bucks': 'https://www.basketball-reference.com/teams/MIL/2024.html',
-        'Minnesota Timberwolves': 'https://www.basketball-reference.com/teams/MIN/2024.html',
-        'New Orleans Pelicans': 'https://www.basketball-reference.com/teams/NOP/2024.html',
-        'New York Knicks': 'https://www.basketball-reference.com/teams/NYK/2024.html',
-        'OKC Thunder': 'https://www.basketball-reference.com/teams/OKC/2024.html',
-        'Orlando Magic': 'https://www.basketball-reference.com/teams/ORL/2024.html',
-        'Philadelphia 76ers': 'https://www.basketball-reference.com/teams/PHI/2024.html',
-        'Phoenix Suns': 'https://www.basketball-reference.com/teams/PHO/2024.html',
-        'Portland Trail Blazers': 'https://www.basketball-reference.com/teams/POR/2024.html',
-        'Sacramento Kings': 'https://www.basketball-reference.com/teams/SAC/2024.html',
-        'San Antonio Spurs': 'https://www.basketball-reference.com/teams/SAS/2024.html',
-        'Toronto Raptors': 'https://www.basketball-reference.com/teams/TOR/2024.html',
-        'Utah Jazz': 'https://www.basketball-reference.com/teams/UTA/2024.html',
-        'Washington Wizards': 'https://www.basketball-reference.com/teams/WAS/2024.html',
+        'Atlanta Hawks': 'https://www.basketball-reference.com/teams/ATL/2025.html',
+        "Boston Celtics": 'https://www.basketball-reference.com/teams/BOS/2025.html', 
+        "Brooklyn Nets": 'https://www.basketball-reference.com/teams/BRK/2025.html', 
+        "Charlotte Hornets": 'https://www.basketball-reference.com/teams/CHA/2025.html', 
+        "Chicago Bulls": 'https://www.basketball-reference.com/teams/CHI/2025.html',
+        'Cleveland Cavaliers': 'https://www.basketball-reference.com/teams/CLE/2025.html',
+        'Dallas Mavericks': 'https://www.basketball-reference.com/teams/DAL/2025.html',
+        'Denver Nuggets': 'https://www.basketball-reference.com/teams/DEN/2025.html',
+        'Detroit Pistons': 'https://www.basketball-reference.com/teams/DET/2025.html',
+        'Golden State Warriors': 'https://www.basketball-reference.com/teams/GSW/2025.html',
+        'Houston Rockets': 'https://www.basketball-reference.com/teams/HOU/2025.html',
+        'Indiana Pacers': 'https://www.basketball-reference.com/teams/IND/2025.html',
+        'Los Angeles Clippers': 'https://www.basketball-reference.com/teams/LAC/2025.html',
+        'Los Angeles Lakers': 'https://www.basketball-reference.com/teams/LAL/2025.html',
+        'Memphis Grizzlies': 'https://www.basketball-reference.com/teams/MEM/2025.html',
+        'Miami Heat': 'https://www.basketball-reference.com/teams/MIA/2025.html',
+        'Milwaukee Bucks': 'https://www.basketball-reference.com/teams/MIL/2025.html',
+        'Minnesota Timberwolves': 'https://www.basketball-reference.com/teams/MIN/2025.html',
+        'New Orleans Pelicans': 'https://www.basketball-reference.com/teams/NOP/2025.html',
+        'New York Knicks': 'https://www.basketball-reference.com/teams/NYK/2025.html',
+        'OKC Thunder': 'https://www.basketball-reference.com/teams/OKC/2025.html',
+        'Orlando Magic': 'https://www.basketball-reference.com/teams/ORL/2025.html',
+        'Philadelphia 76ers': 'https://www.basketball-reference.com/teams/PHI/2025.html',
+        'Phoenix Suns': 'https://www.basketball-reference.com/teams/PHO/2025.html',
+        'Portland Trail Blazers': 'https://www.basketball-reference.com/teams/POR/2025.html',
+        'Sacramento Kings': 'https://www.basketball-reference.com/teams/SAC/2025.html',
+        'San Antonio Spurs': 'https://www.basketball-reference.com/teams/SAS/2025.html',
+        'Toronto Raptors': 'https://www.basketball-reference.com/teams/TOR/2025.html',
+        'Utah Jazz': 'https://www.basketball-reference.com/teams/UTA/2025.html',
+        'Washington Wizards': 'https://www.basketball-reference.com/teams/WAS/2025.html',
     }
     
     # Loop through team names and their corresponding URLs
@@ -151,29 +200,29 @@ with st.expander('**American Odds to Decimal Odds Converter**'):
 
 
 
-with st.expander('**Calculator for Deltas**'):
-    # User inputs for the calculator
-    num1 = st.number_input("Enter number for the **Favorite**", value=0)
-    num2 = st.number_input("Enter number for the **Underdog**", value=0)
+# with st.expander('**Calculator for Deltas**'):
+#     # User inputs for the calculator
+#     num1 = st.number_input("Enter number for the **Favorite**", value=0)
+#     num2 = st.number_input("Enter number for the **Underdog**", value=0)
 
-    # Dropdown for selecting the operation
-    operation = st.selectbox("Choose an operation", ["Add", "Subtract", "Multiply", "Divide"])
+#     # Dropdown for selecting the operation
+#     operation = st.selectbox("Choose an operation", ["Add", "Subtract", "Multiply", "Divide"])
 
-    # Perform calculation based on the selected operation
-    if operation == "Add":
-        result = num1 + num2
-    elif operation == "Subtract":
-        result = num1 - num2
-    elif operation == "Multiply":
-        result = num1 * num2
-    elif operation == "Divide":
-        if num2 != 0:
-            result = num1 / num2
-        else:
-            result = "Cannot divide by zero"
+#     # Perform calculation based on the selected operation
+#     if operation == "Add":
+#         result = num1 + num2
+#     elif operation == "Subtract":
+#         result = num1 - num2
+#     elif operation == "Multiply":
+#         result = num1 * num2
+#     elif operation == "Divide":
+#         if num2 != 0:
+#             result = num1 / num2
+#         else:
+#             result = "Cannot divide by zero"
 
-    # Display the result
-    st.write("Result:", result)
+#     # Display the result
+#     st.write("Result:", result)
 
 
 
@@ -189,7 +238,7 @@ submit = st.sidebar.button('**Submit**')  # ,
 
 if submit:
     # print(petal_width, sepal_length)
-    data_dict = {'team1_decimal_odds':team1_decimal_odds, 'team2_decimal_odds':team2_decimal_odds, 'decimal_delta':decimal_delta, 'delta_points_per_game': delta_points_per_game, 
+    data_dict = {'team1_decimal_odds':team1_decimal_odds, 'team2_decimal_odds':team2_decimal_odds, 'decimal_delta':decimal_delta, 'delta_points_per_game': points_delta, 
     'delta_assists_per_game':delta_assists_per_game,'delta_free_throw_percentage':delta_free_throw_percentage, 
     'team1_encoded':team1_encoded, 'favorite_encoded': favorite_encoded,'visitor_encoded': visitor_encoded}
 
@@ -215,5 +264,6 @@ if submit:
     prediction_percent = prediction[0][0] * 100  # Multiply by 100 to convert to percentage
 
     # Display the custom message with the prediction
-    st.write(f"The favorite has a {prediction_percent:.2f}% chance of winning the game")
+    st.write(f"The home team has a {prediction_percent:.2f}% chance of winning the game")
     print(prediction)
+
